@@ -4,6 +4,9 @@ import scipy.sparse.linalg as _sparselinalg
 from scipy.linalg import solve_banded as _solve_banded
 from matplotlib import pyplot as _plt
 import scipy.special as _sp
+_plt.rcParams["font.family"] = 'Times New Roman'
+_plt.rcParams['mathtext.fontset'] = 'stix'
+bbox_props = dict(boxstyle="square",fc="white")
 
 rho = 18.  # in milimeters
 L = 50. # in milimeters
@@ -34,6 +37,10 @@ M0 = int(_np.round(M0))
 N = M0/z0bar
 N = int(_np.round(N))
 
+
+# Potential new definitions:
+# M = partitionInteger(Lbar,z0bar,Marr)
+# N = int(_np.round(M/Lbar))
 
 def val(ind):
 	return 1+1/(2*_np.floor(ind/M))
@@ -110,5 +117,73 @@ ax.set_xlabel(r'$z$ (mm)')
 ax.set_ylabel(r'$\rho$ (mm)')
 f.tight_layout()
 _plt.colorbar(im,aspect=10,label='Voltage (V)')
+
+
+
+# Legendre Coefficients
+def coeff(j,V0,L,z0,rho0):
+	ind = _np.arange(0,300)
+	k = (ind+0.5)*_np.pi/L
+	A_n = 2*V0/(L*k)*_np.sin(k*z0)/_sp.iv(0,k*rho0)
+	d = _np.sqrt(1/2.0*(z0**2 + rho0**2/2))
+	return 2/V0*(-1)**(j/2)/_sp.factorial(j)*_np.sum(A_n*(k*d)**j)
+
+
+
+def legendre(V0,z0,rho0,rho,z,L):
+	j = _np.arange(0,3,2)
+	d = _np.sqrt(1/2.0*(z0**2 + rho0**2/2))
+	r = _np.sqrt(rho**2 + z**2)
+	frac = (r/d)**j
+	legendre_polys = list(map(_sp.legendre,j))
+	legendre_vals = []
+	for i in _np.arange(0,2):
+		legendre_vals.append(legendre_polys[i](z/r))
+	return V0/2*(coeff(0,V0,L,z0,rho0)*frac[0]*legendre_vals[0] +
+		coeff(2,V0,L,z0,rho0)*frac[1]*legendre_vals[1])
+
+
+ideal_quadrupole = []
+zarr = x
+zarr[3000] = zarr[2999]
+for i in zarr:
+	ideal_quadrupole.append(legendre(-100.0,.849*18,18.0,0.0,i,50.0))
+
+
+
+
+fig, ax = _plt.subplots()
+ax = _plt.subplot(111)
+_plt.plot(x,T2[1080,:],c='k',label='Penning potential')
+_plt.plot(x,ideal_quadrupole,c='k',linestyle='--',label='Ideal quadrupole')
+_plt.title('On-axis potential',size=16,pad=10)
+_plt.legend(loc=(.57,.06),fontsize=13,fancybox=False,framealpha=1).get_frame().set_edgecolor('k')
+# ax1.annotate("", xy=(.5, 10),
+# 	arrowprops=dict(arrowstyle="<->", connectionstyle="arc3"))
+_plt.ylabel('Potential (Volts)',size=14)
+_plt.xlabel(r'$z$' + ' (mm)',size=14)
+ax.set_ylim([-100,0])
+ax.set_xlim([_np.amin(x),_np.amax(x)])
+_plt.xticks(size=13)
+_plt.yticks(size=13)
+_plt.minorticks_on()
+ax.tick_params(which='both',direction='in',top=True,right=True)
+_plt.setp(ax.spines.values(), linewidth=1)
+#_plt.tight_layout()
+_plt.show()
+
+
+# #ideal quadrupole potential (Jerry's paper)
+# def idealQuad(z0,rho0,V0,z,rho):
+# 	d_squared = 1/2.0*(z0**2 + rho0**2/2)
+# 	return V0/(2*d_squared)*(z**2 - rho**2/2)
+
+
+
+
+
+
+
+
 
 
