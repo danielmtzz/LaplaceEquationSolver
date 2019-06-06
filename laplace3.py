@@ -129,8 +129,14 @@ def coeff(j,V0,L,z0,rho0):
 	return 2/V0*(-1)**(j/2)/_sp.factorial(j)*_np.sum(A_n*(k*d)**j)
 
 
+# get even coeff values
+coeff_array = []
+for i in range(0,600,2):
+	coeff_array.append(coeff(i,-100.0,50.0,0.849*18,18.0))
+
 
 def legendre(V0,z0,rho0,rho,z,L):
+	# just get the 0th and 2nd order terms for quadrupole potential
 	j = _np.arange(0,3,2)
 	d = _np.sqrt(1/2.0*(z0**2 + rho0**2/2))
 	r = _np.sqrt(rho**2 + z**2)
@@ -139,8 +145,7 @@ def legendre(V0,z0,rho0,rho,z,L):
 	legendre_vals = []
 	for i in _np.arange(0,2):
 		legendre_vals.append(legendre_polys[i](z/r))
-	return V0/2*(coeff(0,V0,L,z0,rho0)*frac[0]*legendre_vals[0] +
-		coeff(2,V0,L,z0,rho0)*frac[1]*legendre_vals[1])
+	return V0/2*_np.sum(coeff_array[:2]*frac*legendre_vals)
 
 
 ideal_quadrupole = []
